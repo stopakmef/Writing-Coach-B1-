@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Writing Coach — B1+</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #ffffff; --bg2: #f5f4f0; --bg-info: #E6F1FB;
+    --text: #1a1a18; --text2: #5f5e5a; --text3: #9a9890; --text-info: #185FA5;
+    --border: rgba(0,0,0,0.12); --border2: rgba(0,0,0,0.22);
+    --r: 8px; --rl: 12px;
+    --font: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1e1c; --bg2: #2a2a27; --bg-info: #0c2d4a;
+      --text: #f0ede6; --text2: #a8a69e; --text3: #6e6c65; --text-info: #85B7EB;
+      --border: rgba(255,255,255,0.10); --border2: rgba(255,255,255,0.20);
+    }
+  }
+  body { font-family: var(--font); background: var(--bg2); color: var(--text); min-height: 100vh; display: flex; justify-content: center; padding: 2rem 1rem 4rem; }
+  .wrap { width: 100%; max-width: 700px; }
+  .hdr { margin-bottom: 1.75rem; padding-bottom: 1.25rem; border-bottom: 0.5px solid var(--border); }
+  .hdr h1 { font-size: 22px; font-weight: 500; margin-bottom: 4px; }
+  .hdr p { font-size: 14px; color: var(--text2); }
+  .lbl { font-size: 12px; color: var(--text2); margin-bottom: 6px; display: block; }
+  .task-row { display: flex; gap: 8px; margin-bottom: 1.25rem; flex-wrap: wrap; }
+  .tbtn { font-size: 13px; padding: 6px 14px; border-radius: var(--r); border: 0.5px solid var(--border2); background: transparent; color: var(--text2); cursor: pointer; font-family: var(--font); transition: all 0.15s; }
+  .tbtn:hover { background: var(--bg2); }
+  .tbtn.on { background: var(--bg-info); color: var(--text-info); border-color: transparent; font-weight: 500; }
+  .pinput { width: 100%; font-size: 14px; padding: 10px 12px; border-radius: var(--r); border: 0.5px solid var(--border2); background: var(--bg); color: var(--text); resize: none; font-family: var(--font); line-height: 1.5; margin-bottom: 1.25rem; }
+  .pinput:focus { outline: none; border-color: var(--text2); }
+  .draft { width: 100%; min-height: 180px; font-size: 15px; line-height: 1.75; padding: 14px 16px; border-radius: var(--rl); border: 0.5px solid var(--border2); background: var(--bg); color: var(--text); resize: vertical; font-family: var(--font); }
+  .draft:focus { outline: none; border-color: var(--text2); }
+  .draft::placeholder { color: var(--text3); }
+  .wc { font-size: 12px; color: var(--text3); margin-top: 6px; text-align: right; }
+  .sbtn { margin-top: 1rem; width: 100%; padding: 13px; font-size: 15px; font-weight: 500; border-radius: var(--rl); border: none; background: var(--text); color: var(--bg); cursor: pointer; font-family: var(--font); transition: opacity 0.15s; }
+  .sbtn:hover { opacity: 0.85; }
+  .sbtn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .fbox { margin-top: 1.75rem; border-radius: var(--rl); border: 0.5px solid var(--border); overflow: hidden; background: var(--bg); }
+  .fhdr { padding: 12px 16px; background: var(--bg2); border-bottom: 0.5px solid var(--border); font-size: 13px; font-weight: 500; color: var(--text2); display: flex; align-items: center; gap: 8px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #639922; display: inline-block; flex-shrink: 0; }
+  .dot.spin { background: var(--text3); animation: pu 1s infinite; }
+  @keyframes pu { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .cards { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .card { padding: 14px 16px; border-radius: var(--r); border: 0.5px solid transparent; }
+  .ch { font-size: 12px; font-weight: 500; margin-bottom: 7px; }
+  .cb { font-size: 14px; line-height: 1.75; }
+  .c-green { background: #EAF3DE; border-color: #C0DD97; }
+  .c-green .ch { color: #3B6D11; } .c-green .cb { color: #27500A; }
+  .c-blue { background: #E6F1FB; border-color: #B5D4F4; }
+  .c-blue .ch { color: #185FA5; } .c-blue .cb { color: #0C447C; }
+  .c-neutral { background: var(--bg2); border-color: var(--border); }
+  .c-neutral .ch { color: var(--text2); } .c-neutral .cb { color: var(--text); }
+  .c-amber { background: #FAEEDA; border-color: #FAC775; }
+  .c-amber .ch { color: #854F0B; } .c-amber .cb { color: #633806; }
+  .err { padding: 14px 16px; font-size: 14px; color: #A32D2D; }
+  .loading-text { padding: 14px 16px; font-size: 14px; color: var(--text3); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hdr">
+    <h1>Writing coach</h1>
+    <p>Paste your draft and get personal feedback on your writing.</p>
+  </div>
+
+  <div class="task-row" id="taskRow">
+    <button class="tbtn on" data-task="paragraph">Paragraph / essay</button>
+    <button class="tbtn" data-task="narrative">Narrative / story</button>
+  </div>
+
+  <span class="lbl">Writing task or question (optional)</span>
+  <textarea class="pinput" id="taskPrompt" rows="2" placeholder="e.g. Write a paragraph about a time you faced a challenge."></textarea>
+
+  <span class="lbl">Your draft</span>
+  <textarea class="draft" id="draftInput" placeholder="Paste or type your draft here..."></textarea>
+  <div class="wc" id="wc">0 words</div>
+
+  <button class="sbtn" id="submitBtn" disabled>Get feedback</button>
+  <div class="fbox" id="fbox" style="display:none;"></div>
+</div>
+
+<script>
+const taskBtns = document.querySelectorAll('.tbtn');
+const draftInput = document.getElementById('draftInput');
+const taskPrompt = document.getElementById('taskPrompt');
+const submitBtn = document.getElementById('submitBtn');
+const fbox = document.getElementById('fbox');
+const wcEl = document.getElementById('wc');
+let selectedTask = 'paragraph';
+
+taskBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    taskBtns.forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    selectedTask = btn.dataset.task;
+  });
+});
+
+draftInput.addEventListener('input', () => {
+  const words = draftInput.value.trim().split(/\s+/).filter(w => w.length > 0);
+  wcEl.textContent = words.length + ' word' + (words.length !== 1 ? 's' : '');
+  submitBtn.disabled = words.length < 10;
+});
+
+submitBtn.addEventListener('click', async () => {
+  const draft = draftInput.value.trim();
+  const task = taskPrompt.value.trim();
+  const taskType = selectedTask === 'paragraph' ? 'paragraph or essay' : 'narrative or story';
+
+  submitBtn.disabled = true;
+  fbox.style.display = 'block';
+  fbox.innerHTML = `<div class="fhdr"><span class="dot spin"></span> Reading your draft...</div><div class="loading-text">Personalised feedback coming shortly...</div>`;
+
+  const sys = `You are a warm, encouraging writing coach for B1+ level English learners aged 19–20. You give feedback that is learner-focused, actionable, and comprehensible at B1+ level.
+
+The student is writing a ${taskType}.${task ? ' The writing task is: ' + task : ''}
+
+Respond ONLY in this exact JSON format, no extra text, no markdown fences:
+{"praise":"2-3 sentences about something specific and genuine that works well in THIS draft.","focus":"1-2 sentences on the ONE most important thing to improve. Name the issue clearly and say why it matters.","action":"1-2 sentences. One concrete thing they can try right now, in plain language.","question":"One open question to push the student to think more deeply about their writing or ideas."}
+
+Focus areas (choose the most relevant): grammar & accuracy, coherence & structure, vocabulary range, task achievement. Keep each value under 60 words.`;
+
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system: sys,
+        messages: [{ role: 'user', content: 'Here is my draft:\n\n' + draft }]
+      })
+    });
+    const data = await res.json();
+    const raw = (data.content?.[0]?.text || '').replace(/```json|```/g,'').trim();
+    const p = JSON.parse(raw);
+    fbox.innerHTML = `
+      <div class="fhdr"><span class="dot"></span> Your personalised feedback</div>
+      <div class="cards">
+        <div class="card c-green"><div class="ch">what's working well</div><div class="cb">${esc(p.praise)}</div></div>
+        <div class="card c-blue"><div class="ch">one thing to focus on</div><div class="cb">${esc(p.focus)}</div></div>
+        <div class="card c-neutral"><div class="ch">try this now</div><div class="cb">${esc(p.action)}</div></div>
+        <div class="card c-amber"><div class="ch">think about this</div><div class="cb">${esc(p.question)}</div></div>
+      </div>`;
+  } catch(e) {
+    fbox.innerHTML = `<div class="fhdr"><span class="dot" style="background:#E24B4A;"></span> Something went wrong</div><div class="err">Couldn't get feedback right now. Please try again.</div>`;
+  }
+  submitBtn.disabled = false;
+});
+
+function esc(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>
